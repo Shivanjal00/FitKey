@@ -1,4 +1,4 @@
-package com.fitaccess.app
+package com.fitess.app
 
 import android.app.Application
 import com.facebook.react.PackageList

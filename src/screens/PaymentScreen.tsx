@@ -25,7 +25,7 @@ export default function PaymentScreen({ route, navigation }: Props) {
   const { gymId, total } = route.params;
   const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
   const [screenshotUri, setScreenshotUri] = useState<string | null>(null);
-  const upiId = `fitaccess.${gym.id}@upi`;
+  const upiId = `fitkey.${gym.id}@upi`;
 
   const pickScreenshot = async () => {
     const result = await launchImageLibrary({

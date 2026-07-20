@@ -55,7 +55,7 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
-			name = "FitAccess";
+			name = "Fitess";
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
@@ -137,8 +137,8 @@
 			);
 			dependencies = (
 			);
-			name = "FitAccess";
-			productName = "FitAccess";
+			name = "Fitess";
+			productName = "Fitess";
 			productReference = 13B07F961A680F5B00A75B9A /* FitAccess.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -285,7 +285,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "FitAccess/Info.plist";
-             INFOPLIST_KEY_CFBundleDisplayName = "FitAccess";
+             INFOPLIST_KEY_CFBundleDisplayName = "Fitess";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -297,8 +297,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.fitaccess.app";
-				PRODUCT_NAME = "FitAccess";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.fitess.app";
+				PRODUCT_NAME = "Fitess";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -315,7 +315,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = "FitAccess/Info.plist";
-             INFOPLIST_KEY_CFBundleDisplayName = "FitAccess";
+             INFOPLIST_KEY_CFBundleDisplayName = "Fitess";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -327,8 +327,8 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.fitaccess.app";
-				PRODUCT_NAME = "FitAccess";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.fitess.app";
+				PRODUCT_NAME = "Fitess";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

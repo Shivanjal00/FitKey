@@ -44,7 +44,7 @@ export default function LoginScreen({ navigation }: Props) {
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.title}>Welcome to FitAccess</Text>
+        <Text style={styles.title}>Welcome to FitKey</Text>
         <Text style={styles.subtitle}>
           Enter your phone number to sign in or create an account.
         </Text>
