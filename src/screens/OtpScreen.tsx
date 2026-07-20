@@ -47,34 +47,34 @@ export default function OtpScreen({ navigation, route }: Props) {
           </Text>
         </Text>
 
-        <Pressable
-          style={styles.boxRow}
-          onPress={() => inputRef.current?.focus()}
-        >
-          {Array.from({ length: CODE_LENGTH }).map((_, i) => {
-            const filled = i < code.length;
-            const active = i === code.length;
-            return (
-              <View key={i} style={[styles.box, active && styles.boxActive]}>
-                <Text style={styles.boxText}>{code[i] ?? ''}</Text>
-              </View>
-            );
-          })}
-        </Pressable>
+        <View style={styles.otpWrap}>
+          <View style={styles.boxRow} pointerEvents="none">
+            {Array.from({ length: CODE_LENGTH }).map((_, i) => {
+              const active = i === code.length;
+              return (
+                <View key={i} style={[styles.box, active && styles.boxActive]}>
+                  <Text style={styles.boxText}>{code[i] ?? ''}</Text>
+                </View>
+              );
+            })}
+          </View>
 
-        {/* Invisible capture input, drives the boxes above */}
-        <TextInput
-          ref={inputRef}
-          value={code}
-          onChangeText={t =>
-            setCode(t.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH))
-          }
-          keyboardType="number-pad"
-          maxLength={CODE_LENGTH}
-          autoFocus
-          style={styles.hiddenInput}
-        />
-
+          {/* Real input, sized to exactly cover the boxes above — tapping
+             anywhere in that area is a native tap on this input, so focus
+             and the keyboard behave correctly every time, including after
+             the keyboard has been dismissed. */}
+          <TextInput
+            ref={inputRef}
+            value={code}
+            onChangeText={t =>
+              setCode(t.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH))
+            }
+            keyboardType="number-pad"
+            maxLength={CODE_LENGTH}
+            autoFocus
+            style={styles.hiddenInput}
+          />
+        </View>
         <Pressable disabled={seconds > 0} onPress={() => setSeconds(30)}>
           <Text style={styles.resend}>
             Didn't get it?{' '}
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     fontFamily: font.regular,
     color: colors.mutedForeground,
   },
-  boxRow: { flexDirection: 'row', gap: 10, marginTop: 32 },
+  boxRow: { flexDirection: 'row', gap: 10 },
   box: {
     flex: 1,
     aspectRatio: 1,
@@ -133,9 +133,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   boxActive: { borderColor: colors.foreground },
   boxText: { fontSize: 18, fontFamily: font.bold, color: colors.foreground },
-  hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  hiddenInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+  },
   resend: {
     marginTop: 20,
     fontSize: 13,
@@ -143,4 +151,5 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
   },
   ctaWrap: { paddingHorizontal: 28, paddingTop: 16 },
+  otpWrap: { marginTop: 32, position: 'relative' },
 });

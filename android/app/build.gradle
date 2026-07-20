@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.fitvyorapass"
+    namespace "com.fitaccess.app"
     defaultConfig {
-        applicationId "com.fitvyorapass"
+        applicationId "com.fitaccess.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

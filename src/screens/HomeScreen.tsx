@@ -1,5 +1,5 @@
 // screens/HomeScreen.tsx
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -12,9 +12,10 @@ import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
 import { GYMS, CATEGORIES } from '../data/gyms';
-import GymCard from '../components/GymCard';
-import GymCardCompact from '../components/GymCardCompact';
+import GymCardGrid from '../components/GymCardGrid';
 import { useFavorites } from '../store/FavoritesContext';
+
+const PASS_TYPE_CHIPS = new Set(['Daily Pass', 'Monthly Pass']);
 
 export default function HomeScreen() {
   const insets = useSafeInsets();
@@ -25,9 +26,10 @@ export default function HomeScreen() {
   const openGym = (id: string) =>
     navigation.navigate('GymDetails', { gymId: id });
 
-  const nearby = GYMS.slice(0, 4);
-  const featured = GYMS.slice(1, 3);
-  const popular = [...GYMS].sort((a, b) => b.reviews - a.reviews).slice(0, 4);
+  const filteredGyms = useMemo(() => {
+    if (PASS_TYPE_CHIPS.has(activeCategory)) return GYMS;
+    return GYMS.filter(g => g.category === activeCategory);
+  }, [activeCategory]);
 
   return (
     <ScrollView
@@ -35,7 +37,6 @@ export default function HomeScreen() {
       contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 24 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Good morning, Aarav</Text>
@@ -53,7 +54,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* Search bar */}
       <Pressable
         style={styles.searchBar}
         onPress={() => navigation.navigate('Search')}
@@ -65,7 +65,6 @@ export default function HomeScreen() {
         <SlidersHorizontal size={18} color={colors.mutedForeground} />
       </Pressable>
 
-      {/* Categories */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -87,77 +86,31 @@ export default function HomeScreen() {
         })}
       </ScrollView>
 
-      {/* Nearby gyms */}
-      <SectionHeader
-        title="Nearby gyms"
-        onSeeAll={() => navigation.navigate('Search')}
-      />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.hScroll}
-      >
-        {nearby.map(gym => (
-          <GymCardCompact
-            key={gym.id}
-            gym={gym}
-            onPress={() => openGym(gym.id)}
-          />
-        ))}
-      </ScrollView>
-
-      {/* Featured gyms */}
-      <SectionHeader
-        title="Featured gyms"
-        onSeeAll={() => navigation.navigate('Search')}
-      />
-      <View style={styles.vList}>
-        {featured.map(gym => (
-          <GymCard
-            key={gym.id}
-            gym={gym}
-            favorite={favorites.has(gym.id)}
-            onToggleFavorite={() => toggleFavorite(gym.id)}
-            onPress={() => openGym(gym.id)}
-          />
-        ))}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Gyms near you</Text>
+        <Text style={styles.resultCount}>{filteredGyms.length} found</Text>
       </View>
 
-      {/* Popular today */}
-      <SectionHeader title="Popular today" />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.hScroll}
-      >
-        {popular.map(gym => (
-          <GymCardCompact
-            key={gym.id}
-            gym={gym}
-            onPress={() => openGym(gym.id)}
-          />
-        ))}
-      </ScrollView>
-    </ScrollView>
-  );
-}
-
-function SectionHeader({
-  title,
-  onSeeAll,
-}: {
-  title: string;
-  onSeeAll?: () => void;
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {onSeeAll && (
-        <Pressable onPress={onSeeAll}>
-          <Text style={styles.seeAll}>See all</Text>
-        </Pressable>
+      {filteredGyms.length > 0 ? (
+        <View style={styles.grid}>
+          {filteredGyms.map(gym => (
+            <GymCardGrid
+              key={gym.id}
+              gym={gym}
+              favorite={favorites.has(gym.id)}
+              onToggleFavorite={() => toggleFavorite(gym.id)}
+              onPress={() => openGym(gym.id)}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>
+            No gyms found in this category yet.
+          </Text>
+        </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -243,7 +196,22 @@ const styles = StyleSheet.create({
     fontFamily: font.bold,
     color: colors.foreground,
   },
-  seeAll: { fontSize: 13, fontFamily: font.semibold, color: colors.accent },
-  hScroll: { gap: 12, paddingHorizontal: 20 },
-  vList: { gap: 12, paddingHorizontal: 20 },
+  resultCount: {
+    fontSize: 12.5,
+    fontFamily: font.medium,
+    color: colors.mutedForeground,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 14,
+    paddingHorizontal: 20,
+  },
+  emptyState: { paddingHorizontal: 20, paddingTop: 20, alignItems: 'center' },
+  emptyText: {
+    fontSize: 13.5,
+    fontFamily: font.regular,
+    color: colors.mutedForeground,
+  },
 });

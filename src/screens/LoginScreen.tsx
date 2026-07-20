@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   Pressable,
   StyleSheet,
@@ -37,14 +38,16 @@ export default function LoginScreen({ navigation }: Props) {
         ]}
       >
         <View style={styles.logo}>
-          <View style={styles.logoMark} />
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
-
-        <Text style={styles.title}>Welcome to FitVyoraPass</Text>
+        <Text style={styles.title}>Welcome to FitAccess</Text>
         <Text style={styles.subtitle}>
           Enter your phone number to sign in or create an account.
         </Text>
-
         <Text style={styles.label}>Phone number</Text>
         <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
           <Text style={styles.prefix}>+91</Text>
@@ -61,27 +64,23 @@ export default function LoginScreen({ navigation }: Props) {
             maxLength={10}
           />
         </View>
-
         <PrimaryButton
           label="Send OTP"
           disabled={!isValid}
           onPress={() => navigation.navigate('Otp', { phone })}
           style={{ marginTop: 24 }}
         />
-
         <View style={styles.dividerRow}>
           <View style={styles.hairline} />
           <Text style={styles.dividerText}>or</Text>
           <View style={styles.hairline} />
         </View>
-
         <PrimaryButton
           label="Continue with Google"
           variant="outline"
           icon={<GoogleIcon size={18} />}
           onPress={() => navigation.navigate('Otp', { phone: '' })}
         />
-
         <Pressable
           style={styles.skip}
           onPress={() => navigation.replace('MainTabs')}
@@ -95,13 +94,8 @@ export default function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 28 },
-  logo: { marginBottom: 32 },
-  logoMark: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: colors.foreground,
-  },
+  logo: { marginBottom: 8 },
+  logoImage: { width: 56, height: 56 },
   title: {
     fontSize: 25,
     lineHeight: 30,
