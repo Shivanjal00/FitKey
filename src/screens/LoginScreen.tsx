@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
@@ -20,11 +21,25 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
+// ---------------------------------------------------------------------------
+// Phone + OTP flow is temporarily disabled — see OtpScreen.tsx (commented out
+// entirely) and RootNavigator.tsx (Otp route removed). Re-enable both once
+// Firebase Phone Auth integration starts.
+// ---------------------------------------------------------------------------
+
 export default function LoginScreen({ navigation }: Props) {
   const insets = useSafeInsets();
-  const [phone, setPhone] = useState('');
-  const [focused, setFocused] = useState(false);
-  const isValid = phone.length === 10;
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const isValid = email.includes('@') && password.length >= 6;
+
+  // No backend yet — proceed straight to the app. Swap this for real
+  // Firebase Auth sign-in once Firebase integration starts.
+  const proceed = () => navigation.replace('MainTabs');
 
   return (
     <KeyboardAvoidingView
@@ -46,45 +61,70 @@ export default function LoginScreen({ navigation }: Props) {
         </View>
         <Text style={styles.title}>Welcome to FitKey</Text>
         <Text style={styles.subtitle}>
-          Enter your phone number to sign in or create an account.
+          Sign in with your email to continue.
         </Text>
-        <Text style={styles.label}>Phone number</Text>
-        <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
-          <Text style={styles.prefix}>+91</Text>
-          <View style={styles.divider} />
+
+        <Text style={styles.label}>Email address</Text>
+        <View style={[styles.inputRow, emailFocused && styles.inputRowFocused]}>
           <TextInput
-            value={phone}
-            onChangeText={t => setPhone(t.replace(/[^0-9]/g, '').slice(0, 10))}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            keyboardType="number-pad"
-            placeholder="98765 43210"
+            value={email}
+            onChangeText={setEmail}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="you@example.com"
             placeholderTextColor={`${colors.mutedForeground}99`}
             style={styles.input}
-            maxLength={10}
           />
         </View>
+
+        <Text style={[styles.label, { marginTop: 18 }]}>Password</Text>
+        <View
+          style={[styles.inputRow, passwordFocused && styles.inputRowFocused]}
+        >
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            placeholder="At least 6 characters"
+            placeholderTextColor={`${colors.mutedForeground}99`}
+            style={styles.input}
+          />
+          <Pressable onPress={() => setShowPassword(v => !v)} hitSlop={8}>
+            {showPassword ? (
+              <EyeOff size={18} color={colors.mutedForeground} />
+            ) : (
+              <Eye size={18} color={colors.mutedForeground} />
+            )}
+          </Pressable>
+        </View>
+
         <PrimaryButton
-          label="Send OTP"
+          label="Log In"
           disabled={!isValid}
-          onPress={() => navigation.navigate('Otp', { phone })}
+          onPress={proceed}
           style={{ marginTop: 24 }}
         />
+
         <View style={styles.dividerRow}>
           <View style={styles.hairline} />
           <Text style={styles.dividerText}>or</Text>
           <View style={styles.hairline} />
         </View>
+
         <PrimaryButton
           label="Continue with Google"
           variant="outline"
           icon={<GoogleIcon size={18} />}
-          onPress={() => navigation.navigate('Otp', { phone: '' })}
+          onPress={proceed}
         />
-        <Pressable
-          style={styles.skip}
-          onPress={() => navigation.replace('MainTabs')}
-        >
+
+        <Pressable style={styles.skip} onPress={proceed}>
           <Text style={styles.skipText}>Skip for now</Text>
         </Pressable>
       </View>
@@ -128,8 +168,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   inputRowFocused: { borderColor: colors.foreground },
-  prefix: { fontSize: 15, fontFamily: font.semibold, color: colors.foreground },
-  divider: { width: 1, height: 20, backgroundColor: colors.border },
   input: {
     flex: 1,
     fontSize: 15,

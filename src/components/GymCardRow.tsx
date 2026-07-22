@@ -29,10 +29,10 @@ export default function GymCardRow({
           {gym.area} · {gym.distance}
         </Text>
         <View style={styles.footerRow}>
-          <Text style={styles.price}>
+          {/* <Text style={styles.price}>
             ₹{gym.price}
             <Text style={styles.priceUnit}>/day</Text>
-          </Text>
+          </Text> */}
           <Text
             style={[
               styles.status,

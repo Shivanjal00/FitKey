@@ -32,6 +32,7 @@ export default function GymCardCompact({
         {gym.distance} · ₹{gym.price}/day
       </Text>
     </Pressable>
+    //· ₹{gym.price}/day
   );
 }
 

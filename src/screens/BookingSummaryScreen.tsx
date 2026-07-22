@@ -10,14 +10,11 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingSummary'>;
 
-const PLATFORM_FEE = 19;
-
 export default function BookingSummaryScreen({ route, navigation }: Props) {
   const insets = useSafeInsets();
   const { gymId, planIndex, slot } = route.params;
   const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
   const plan = gym.plans[planIndex];
-  const total = plan.price + PLATFORM_FEE;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -47,15 +44,6 @@ export default function BookingSummaryScreen({ route, navigation }: Props) {
           <Divider />
           <Row label="Time" value={slot} />
         </View>
-
-        <Text style={styles.sectionLabel}>Price details</Text>
-        <View style={styles.card}>
-          <Row label={plan.name} value={`₹${plan.price}`} />
-          <Divider />
-          <Row label="Platform fee" value={`₹${PLATFORM_FEE}`} />
-          <Divider />
-          <Row label="Total" value={`₹${total}`} bold />
-        </View>
       </View>
 
       <View
@@ -63,11 +51,9 @@ export default function BookingSummaryScreen({ route, navigation }: Props) {
       >
         <Pressable
           style={styles.cta}
-          onPress={() =>
-            navigation.navigate('Payment', { gymId, planIndex, slot, total })
-          }
+          onPress={() => navigation.navigate('BookingStatus', { gymId })}
         >
-          <Text style={styles.ctaText}>Proceed to Pay · ₹{total}</Text>
+          <Text style={styles.ctaText}>Confirm Booking</Text>
         </Pressable>
       </View>
     </View>
@@ -171,15 +157,6 @@ const styles = StyleSheet.create({
   },
   rowValueBold: { fontFamily: font.bold, fontSize: 16 },
   rowDivider: { height: 1, backgroundColor: colors.border },
-  sectionLabel: {
-    marginTop: 24,
-    marginBottom: 8,
-    fontSize: 13,
-    fontFamily: font.semibold,
-    color: colors.mutedForeground,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
   ctaWrap: {
     paddingHorizontal: 20,
     paddingTop: 14,

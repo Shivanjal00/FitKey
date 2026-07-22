@@ -9,7 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Clock } from 'lucide-react-native';
+import { CheckCircle2 } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
@@ -69,22 +69,18 @@ export default function BookingStatusScreen({ route, navigation }: Props) {
             ]}
           />
           <View style={styles.iconCircle}>
-            <Clock size={32} color={colors.primaryForeground} strokeWidth={2} />
+            <CheckCircle2
+              size={32}
+              color={colors.primaryForeground}
+              strokeWidth={2}
+            />
           </View>
         </View>
 
-        <Text style={styles.title}>Booking Pending Verification</Text>
+        <Text style={styles.title}>Booking Confirmed</Text>
         <Text style={styles.subtitle}>
-          Your payment screenshot has been sent to {gym.name}. You'll be
-          notified as soon as it's verified.
+          You're all set at {gym.name}. We'll see you at your booked slot.
         </Text>
-
-        <View style={styles.timerPill}>
-          <Clock size={14} color={colors.mutedForeground} />
-          <Text style={styles.timerText}>
-            Usually verified within 15 minutes
-          </Text>
-        </View>
 
         <View style={styles.gymCard}>
           <Image source={{ uri: gym.image }} style={styles.gymImage} />
@@ -159,23 +155,6 @@ const styles = StyleSheet.create({
     fontFamily: font.regular,
     color: colors.mutedForeground,
     textAlign: 'center',
-  },
-  timerPill: {
-    marginTop: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  timerText: {
-    fontSize: 12.5,
-    fontFamily: font.medium,
-    color: colors.foreground,
   },
   gymCard: {
     marginTop: 28,

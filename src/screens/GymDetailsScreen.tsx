@@ -199,7 +199,7 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
                   style={[styles.planCard, selected && styles.planCardSelected]}
                 >
                   <Text style={styles.planName}>{plan.name}</Text>
-                  <Text style={styles.planPrice}>₹{plan.price}</Text>
+                  {/* <Text style={styles.planPrice}>₹{plan.price}</Text> */}
                   {selected && (
                     <Text style={styles.planSelectedLabel}>Selected</Text>
                   )}
@@ -224,15 +224,10 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
       </ScrollView>
 
       {/* Sticky bottom bar */}
-      <View
-        style={[
-          styles.stickyBar,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-      >
-        <View>
+      <View style={styles.stickyBar}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.stickyPlanLabel}>Selected plan</Text>
           <Text style={styles.stickyPlanName}>{gym.plans[planIndex].name}</Text>
-          <Text style={styles.stickyPrice}>₹{gym.plans[planIndex].price}</Text>
         </View>
         <Pressable
           style={styles.bookButton}
@@ -268,6 +263,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  stickyPlanLabel: {
+    fontSize: 11,
+    fontFamily: font.regular,
+    color: colors.mutedForeground,
+  },
+  stickyPlanName: {
+    fontSize: 15,
+    fontFamily: font.bold,
+    color: colors.foreground,
+    marginTop: 1,
   },
   dotsRow: {
     position: 'absolute',
@@ -435,14 +441,10 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 20,
     paddingTop: 14,
+    marginBottom: 44,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
-  },
-  stickyPlanName: {
-    fontSize: 11,
-    fontFamily: font.regular,
-    color: colors.mutedForeground,
   },
   stickyPrice: {
     fontSize: 19,

@@ -5,6 +5,6 @@ export function useSafeInsets() {
   const insets = useSafeAreaInsets();
   return {
     top: Math.max(insets.top, 20),
-    bottom: Math.max(insets.bottom, 24),
+    bottom: Math.max(insets.bottom, 44),
   };
 }

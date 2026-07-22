@@ -69,10 +69,10 @@ export default function GymCardGrid({
         </Text>
 
         <View style={styles.footerRow}>
-          <Text style={styles.price}>
+          {/* <Text style={styles.price}>
             ₹{gym.price}
             <Text style={styles.priceUnit}>/day</Text>
-          </Text>
+          </Text> */}
           <Pressable onPress={onPress} style={styles.bookPill}>
             <Text style={styles.bookText}>Book</Text>
           </Pressable>
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
   },
   bookPill: {
     backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderRadius: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
   },
   bookText: {
     fontSize: 10.5,
