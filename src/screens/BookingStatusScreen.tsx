@@ -104,7 +104,7 @@ export default function BookingStatusScreen({ route, navigation }: Props) {
         </Pressable>
         <Pressable
           style={styles.secondaryButton}
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Gyms' })}
         >
           <Text style={styles.secondaryButtonText}>Return Home</Text>
         </Pressable>

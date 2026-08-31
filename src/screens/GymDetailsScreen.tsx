@@ -1,4 +1,4 @@
-// screens/GymDetailsScreen.tsx
+// src/screens/GymDetailsScreen.tsx
 import { useState } from 'react';
 import {
   View,
@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -28,9 +29,10 @@ import {
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS } from '../data/gyms';
-import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useAsync } from '../lib/useAsync';
+import { getGymById } from '../services/firebase/gyms.service';
 import { useFavorites } from '../store/FavoritesContext';
+import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GymDetails'>;
 const { width } = Dimensions.get('window');
@@ -47,11 +49,20 @@ const FACILITY_ICONS: Record<string, any> = {
 export default function GymDetailsScreen({ route, navigation }: Props) {
   const insets = useSafeInsets();
   const { gymId } = route.params;
-  const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
+  const { data: gym, loading } = useAsync(() => getGymById(gymId), [gymId]);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const [planIndex, setPlanIndex] = useState(2);
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const [planIndex, setPlanIndex] = useState(0);
+
+  if (loading || !gym) {
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
   const favorite = isFavorite(gym.id);
 
   const onScrollGallery = (e: any) => {
@@ -62,7 +73,6 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Gallery */}
         <View style={styles.galleryWrap}>
           <ScrollView
             horizontal
@@ -117,7 +127,6 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Info */}
         <View style={styles.content}>
           <View style={styles.categoryPill}>
             <Text style={styles.categoryText}>{gym.category}</Text>
@@ -135,7 +144,6 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
               {gym.area} · {gym.distance}
             </Text>
           </View>
-
           <View style={styles.mapPreview}>
             <View style={styles.mapPill}>
               <NavigationIcon size={13} color={colors.foreground} />
@@ -159,11 +167,11 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
             </Text>
           </View>
 
-          <Divider />
+          <View style={styles.divider} />
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.aboutText}>{gym.about}</Text>
 
-          <Divider />
+          <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Facilities</Text>
           <View style={styles.facilitiesGrid}>
             {gym.tags.map(tag => {
@@ -183,7 +191,7 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
             })}
           </View>
 
-          <Divider />
+          <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Membership plans</Text>
           <ScrollView
             horizontal
@@ -199,7 +207,6 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
                   style={[styles.planCard, selected && styles.planCardSelected]}
                 >
                   <Text style={styles.planName}>{plan.name}</Text>
-                  {/* <Text style={styles.planPrice}>₹{plan.price}</Text> */}
                   {selected && (
                     <Text style={styles.planSelectedLabel}>Selected</Text>
                   )}
@@ -213,7 +220,7 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
             <Text style={[styles.mutedText, { flex: 1 }]}>{gym.trainer}</Text>
           </View>
 
-          <Divider />
+          <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Policies</Text>
           <Text style={[styles.aboutText, { marginBottom: 24 }]}>
             Carry a valid ID for entry. Passes are non-transferable and valid
@@ -223,8 +230,12 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      {/* Sticky bottom bar */}
-      <View style={styles.stickyBar}>
+      <View
+        style={[
+          styles.stickyBar,
+          { paddingBottom: Math.max(insets.bottom, 16) },
+        ]}
+      >
         <View style={{ flex: 1 }}>
           <Text style={styles.stickyPlanLabel}>Selected plan</Text>
           <Text style={styles.stickyPlanName}>{gym.plans[planIndex].name}</Text>
@@ -242,11 +253,13 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
   );
 }
 
-function Divider() {
-  return <View style={styles.divider} />;
-}
-
 const styles = StyleSheet.create({
+  loadingWrap: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   galleryWrap: { height: 288, width: '100%' },
   galleryTopBar: {
     position: 'absolute',
@@ -263,17 +276,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stickyPlanLabel: {
-    fontSize: 11,
-    fontFamily: font.regular,
-    color: colors.mutedForeground,
-  },
-  stickyPlanName: {
-    fontSize: 15,
-    fontFamily: font.bold,
-    color: colors.foreground,
-    marginTop: 1,
   },
   dotsRow: {
     position: 'absolute',
@@ -423,17 +425,11 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     color: colors.foreground,
   },
-  planPrice: {
-    fontSize: 17,
-    fontFamily: font.bold,
-    color: colors.foreground,
-    marginTop: 4,
-  },
   planSelectedLabel: {
     fontSize: 10.5,
     fontFamily: font.semibold,
     color: colors.accent,
-    marginTop: 2,
+    marginTop: 4,
   },
   stickyBar: {
     flexDirection: 'row',
@@ -441,22 +437,26 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 20,
     paddingTop: 14,
-    marginBottom: 44,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
   },
-  stickyPrice: {
-    fontSize: 19,
+  stickyPlanLabel: {
+    fontSize: 11,
+    fontFamily: font.regular,
+    color: colors.mutedForeground,
+  },
+  stickyPlanName: {
+    fontSize: 15,
     fontFamily: font.bold,
     color: colors.foreground,
+    marginTop: 1,
   },
   bookButton: {
-    flex: 1,
     backgroundColor: colors.accent,
     borderRadius: 18,
+    paddingHorizontal: 24,
     paddingVertical: 14,
-    alignItems: 'center',
   },
   bookButtonText: {
     fontSize: 15,

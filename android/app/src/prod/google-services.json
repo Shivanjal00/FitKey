@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "806947013885",
+    "project_id": "fitkey-production-48cb9",
+    "storage_bucket": "fitkey-production-48cb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:806947013885:android:20105d2ff491065465aa94",
+        "android_client_info": {
+          "package_name": "com.fitkey.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "806947013885-2d3hptheo69rkn69ulonud7a7o6jupnr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fitkey.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "806947013885-ktoojrr176pcr53bi6bki366i0f76tkp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAhj7UCggk2SSKqwhOpNNmKzbWVuNsPB8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "806947013885-ktoojrr176pcr53bi6bki366i0f76tkp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

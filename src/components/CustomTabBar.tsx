@@ -1,13 +1,20 @@
 // components/CustomTabBar.tsx
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Home, CalendarCheck, Heart, User } from 'lucide-react-native';
+import {
+  Dumbbell,
+  Library,
+  CalendarCheck,
+  Heart,
+  User,
+} from 'lucide-react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
 
 const ICONS = {
-  Home,
+  Gyms: Dumbbell,
+  Libraries: Library,
   Bookings: CalendarCheck,
   Favorites: Heart,
   Profile: User,
@@ -29,7 +36,7 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             style={styles.item}
           >
             <Icon
-              size={24}
+              size={22}
               color={focused ? colors.foreground : colors.mutedForeground}
               strokeWidth={focused ? 2 : 1.6}
             />
@@ -60,8 +67,8 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  label: { fontSize: 11, fontFamily: font.medium },
+  label: { fontSize: 10.5, fontFamily: font.medium },
 });

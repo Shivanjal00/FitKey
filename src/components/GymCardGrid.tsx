@@ -1,6 +1,6 @@
 // src/components/GymCardGrid.tsx
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
-import { Heart, Star } from 'lucide-react-native';
+import { Heart, Star, MapPin } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import type { Gym } from '../data/gyms';
@@ -58,25 +58,25 @@ export default function GymCardGrid({
           />
           <Text style={styles.statusText}>{gym.open ? 'Open' : 'Closed'}</Text>
         </View>
+
+        {/* Distance gets its own fixed badge so it's never truncated by a long area name */}
+        <View style={styles.distanceBadge}>
+          <MapPin size={9} color={colors.foreground} />
+          <Text style={styles.distanceText}>{gym.distance}</Text>
+        </View>
       </View>
 
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
           {gym.name}
         </Text>
-        <Text style={styles.meta} numberOfLines={1}>
-          {gym.area} · {gym.distance}
+        <Text style={styles.area} numberOfLines={1}>
+          {gym.area}
         </Text>
 
-        <View style={styles.footerRow}>
-          {/* <Text style={styles.price}>
-            ₹{gym.price}
-            <Text style={styles.priceUnit}>/day</Text>
-          </Text> */}
-          <Pressable onPress={onPress} style={styles.bookPill}>
-            <Text style={styles.bookText}>Book</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={onPress} style={styles.bookButton}>
+          <Text style={styles.bookText}>Book Now</Text>
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -139,34 +139,41 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     color: colors.foreground,
   },
+  distanceBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  distanceText: {
+    fontSize: 9.5,
+    fontFamily: font.semibold,
+    color: colors.foreground,
+  },
   body: { padding: 10 },
   name: { fontSize: 13, fontFamily: font.semibold, color: colors.foreground },
-  meta: {
+  area: {
     marginTop: 2,
     fontSize: 11,
     fontFamily: font.regular,
     color: colors.mutedForeground,
   },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  bookButton: {
     marginTop: 10,
-  },
-  price: { fontSize: 13.5, fontFamily: font.bold, color: colors.foreground },
-  priceUnit: {
-    fontSize: 10.5,
-    fontFamily: font.medium,
-    color: colors.mutedForeground,
-  },
-  bookPill: {
     backgroundColor: colors.accent,
     borderRadius: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   bookText: {
-    fontSize: 10.5,
+    fontSize: 12.5,
     fontFamily: font.semibold,
     color: colors.primaryForeground,
   },

@@ -12,6 +12,8 @@ import BookingSummaryScreen from '../screens/BookingSummaryScreen';
 import BookingStatusScreen from '../screens/BookingStatusScreen';
 import SearchScreen from '../screens/SearchScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import LibraryDetailsScreen from '../screens/LibraryDetailsScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -19,7 +21,7 @@ export type RootStackParamList = {
   Login: undefined;
   // Otp: { phone: string }; // disabled
   MainTabs:
-    | { screen?: 'Home' | 'Bookings' | 'Favorites' | 'Profile' }
+    | { screen?: 'Gyms' | 'Libraries' | 'Bookings' | 'Favorites' | 'Profile' }
     | undefined;
   GymDetails: { gymId: string };
   SelectSlot: { gymId: string; planIndex: number };
@@ -28,6 +30,8 @@ export type RootStackParamList = {
   BookingStatus: { gymId: string };
   Search: undefined;
   Notifications: undefined;
+  LibraryDetails: { libraryId: string };
+  EditProfile: { displayName: string; photoURL: string | null };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -38,6 +42,7 @@ export default function RootNavigator() {
       initialRouteName="Splash"
       screenOptions={{ headerShown: false }}
     >
+      <Stack.Screen name="LibraryDetails" component={LibraryDetailsScreen} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -50,6 +55,7 @@ export default function RootNavigator() {
       <Stack.Screen name="BookingStatus" component={BookingStatusScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }

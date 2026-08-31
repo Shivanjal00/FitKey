@@ -4,6 +4,7 @@ import { View, Image, StyleSheet, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
+import { subscribeToAuthState } from '../services/firebase/auth.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
@@ -29,11 +30,36 @@ export default function SplashScreen({ navigation }: Props) {
       }),
     ]).start();
 
+    // Wait for both the splash hold time AND Firebase's first auth-state
+    // callback (persisted session restore), then route once based on
+    // whichever resolves last — a signed-in user skips straight past
+    // Onboarding/Login into the app.
+    let timedOut = false;
+    let authChecked = false;
+    let signedIn = false;
+    let navigated = false;
+
+    const tryNavigate = () => {
+      if (navigated || !timedOut || !authChecked) return;
+      navigated = true;
+      navigation.replace(signedIn ? 'MainTabs' : 'Onboarding');
+    };
+
     const timer = setTimeout(() => {
-      navigation.replace('Onboarding');
+      timedOut = true;
+      tryNavigate();
     }, HOLD_DURATION);
 
-    return () => clearTimeout(timer);
+    const unsubscribe = subscribeToAuthState(user => {
+      signedIn = !!user;
+      authChecked = true;
+      tryNavigate();
+    });
+
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, [navigation, opacity, scale]);
 
   return (

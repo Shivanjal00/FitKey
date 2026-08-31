@@ -11,25 +11,47 @@ import {
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS, CATEGORIES } from '../data/gyms';
 import GymCardGrid from '../components/GymCardGrid';
 import { useFavorites } from '../store/FavoritesContext';
 
 const PASS_TYPE_CHIPS = new Set(['Daily Pass', 'Monthly Pass']);
+
+import { ActivityIndicator } from 'react-native'; // Text already imported, ActivityIndicator is new
+import { getGyms } from '../services/firebase/gyms.service';
+import { useAsync } from '../lib/useAsync';
+// REMOVE: import { GYMS, CATEGORIES } from '../data/gyms';
+import { CATEGORIES } from '../data/gyms'; // CATEGORIES stays as a local constant — it's UI config, not data
 
 export default function HomeScreen() {
   const insets = useSafeInsets();
   const navigation = useNavigation<any>();
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const { favorites, toggleFavorite } = useFavorites();
+  const { data: gyms, loading } = useAsync(getGyms);
 
   const openGym = (id: string) =>
     navigation.navigate('GymDetails', { gymId: id });
 
   const filteredGyms = useMemo(() => {
-    if (PASS_TYPE_CHIPS.has(activeCategory)) return GYMS;
-    return GYMS.filter(g => g.category === activeCategory);
-  }, [activeCategory]);
+    if (!gyms) return [];
+    if (PASS_TYPE_CHIPS.has(activeCategory)) return gyms;
+    return gyms.filter(g => g.category === activeCategory);
+  }, [activeCategory, gyms]);
+
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
