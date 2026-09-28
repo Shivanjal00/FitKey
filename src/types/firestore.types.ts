@@ -21,6 +21,9 @@ export type Gym = {
   about: string;
   trainer: string;
   plans: Plan[];
+  location: { latitude: number; longitude: number } | null;
+  address: string | null;
+  phone: string | null;
 };
 
 export type Library = {
@@ -36,14 +39,22 @@ export type Library = {
   image: string;
   about: string;
   plans: Plan[];
+  location: { latitude: number; longitude: number } | null;
+  address: string | null;
+  phone: string | null;
 };
 
-// Mirrors the doc shape written by ensureUserProfile() in auth.service.ts.
+// Mirrors the doc shape written by completeRegistration() in auth.service.ts.
 export type UserProfile = {
   id: string;
   displayName: string;
   email: string | null;
+  phone: string | null;
   photoURL: string | null;
+  address: string | null;
+  gender: string | null;
+  location: { latitude: number; longitude: number } | null;
+  registrationComplete: boolean;
   tier: string;
   bookingsCount: number;
   favoritesCount: number;

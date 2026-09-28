@@ -81,7 +81,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
   // Firestore profile doc wins when present; fall back to whatever the
   // Firebase Auth user object already has (covers the brief window before
-  // the doc has loaded, and the rare case ensureUserProfile's write failed).
+  // the doc has loaded).
   const displayName =
     profile?.displayName || currentUser?.displayName || 'FitKey User';
   const email = profile?.email ?? currentUser?.email ?? null;

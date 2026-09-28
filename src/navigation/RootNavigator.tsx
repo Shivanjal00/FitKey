@@ -3,7 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
-// import OtpScreen from '../screens/OtpScreen'; // disabled — see OtpScreen.tsx
+// import OtpScreen from '../screens/OtpScreen';
+import RegistrationScreen from '../screens/RegistrationScreen';
 import TabNavigator from './TabNavigator';
 import GymDetailsScreen from '../screens/GymDetailsScreen';
 import SelectSlotScreen from '../screens/SelectSlotScreen';
@@ -19,7 +20,17 @@ export type RootStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
   Login: undefined;
-  // Otp: { phone: string }; // disabled
+  // Otp: { phone: string };
+  // Each field is null when that piece of info wasn't provided by whichever
+  // auth method got the user here — phone signups arrive with phone set and
+  // email null, Google signups the reverse. RegistrationScreen locks
+  // whichever field came in non-null and requires the other.
+  Registration: {
+    phone: string | null;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+  };
   MainTabs:
     | { screen?: 'Gyms' | 'Libraries' | 'Bookings' | 'Favorites' | 'Profile' }
     | undefined;
@@ -47,6 +58,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       {/* <Stack.Screen name="Otp" component={OtpScreen} /> */}
+      <Stack.Screen name="Registration" component={RegistrationScreen} />
       <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="GymDetails" component={GymDetailsScreen} />
       <Stack.Screen name="SelectSlot" component={SelectSlotScreen} />

@@ -15,6 +15,8 @@ import { useAsync } from '../lib/useAsync';
 import { getLibraries } from '../services/firebase/libraries.service';
 import LibraryCardGrid from '../components/LibraryCardGrid';
 import type { TabScreenProps } from '../navigation/TabNavigator';
+import { useUserLocation } from '../store/UserLocationContext';
+import { withComputedDistance } from '../services/location.service';
 
 type Props = TabScreenProps<'Libraries'>;
 
@@ -31,12 +33,16 @@ export default function LibrariesScreen({ navigation }: Props) {
   const insets = useSafeInsets();
   const [activeFilter, setActiveFilter] = useState('All');
   const { data: libraries, loading } = useAsync(getLibraries);
+  const { coords } = useUserLocation();
 
   const filtered = useMemo(() => {
     if (!libraries) return [];
-    if (activeFilter === 'All') return libraries;
-    return libraries.filter(lib => lib.tags.includes(activeFilter));
-  }, [activeFilter, libraries]);
+    const base =
+      activeFilter === 'All'
+        ? libraries
+        : libraries.filter(lib => lib.tags.includes(activeFilter));
+    return withComputedDistance(base, coords);
+  }, [activeFilter, libraries, coords]);
 
   if (loading) {
     return (

@@ -11,6 +11,7 @@
     "android:dev": "react-native run-android --mode=devDebug --appIdSuffix dev"
   },
   "dependencies": {
+    "@react-native-community/geolocation": "^3.4.0",
     "@react-native-firebase/app": "^26.2.0",
     "@react-native-firebase/auth": "^26.2.0",
     "@react-native-firebase/firestore": "^26.2.0",
@@ -22,10 +23,12 @@
     "lucide-react-native": "^1.24.0",
     "react": "19.2.3",
     "react-native": "0.86.0",
+    "react-native-config": "^1.7.2",
     "react-native-device-info": "^15.0.2",
     "react-native-gesture-handler": "^3.0.2",
     "react-native-image-picker": "^8.2.1",
     "react-native-linear-gradient": "^2.8.3",
+    "react-native-maps": "^1.29.8",
     "react-native-safe-area-context": "^5.8.0",
     "react-native-screens": "^4.26.1",
     "react-native-svg": "^15.15.5"

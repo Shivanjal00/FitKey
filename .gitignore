@@ -2,6 +2,12 @@
 #
 .DS_Store
 
+
+
+# .gitignore — add these lines
+.env.dev
+.env.prod
+
 # Xcode
 #
 build/

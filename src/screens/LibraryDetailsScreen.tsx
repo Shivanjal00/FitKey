@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
@@ -19,6 +20,7 @@ import {
   Sofa,
   GraduationCap,
   Building2,
+  MapPin,
 } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
@@ -26,6 +28,7 @@ import { useSafeInsets } from '../lib/useSafeInsets';
 import { useAsync } from '../lib/useAsync';
 import { getLibraryById } from '../services/firebase/libraries.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import MapView, { Marker } from 'react-native-maps';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LibraryDetails'>;
 
@@ -101,7 +104,42 @@ export default function LibraryDetailsScreen({ route, navigation }: Props) {
               {library.open ? 'Open now' : 'Closed now'}
             </Text>
           </View>
-
+          {library.location && (
+            <View style={styles.mapPreview}>
+              <MapView
+                style={{ flex: 1 }}
+                initialRegion={{
+                  latitude: library.location.latitude,
+                  longitude: library.location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                pointerEvents="none"
+              >
+                <Marker coordinate={library.location} />
+              </MapView>
+              <Pressable
+                style={styles.mapPill}
+                onPress={() => {
+                  const geoUrl = `google.navigation:q=${
+                    library.location!.latitude
+                  },${library.location!.longitude}`;
+                  Linking.openURL(geoUrl).catch(() =>
+                    Linking.openURL(
+                      `https://www.google.com/maps/dir/?api=1&destination=${
+                        library.location!.latitude
+                      },${library.location!.longitude}`,
+                    ),
+                  );
+                }}
+              >
+                <MapPin size={13} color={colors.foreground} />
+                <Text style={styles.mapPillText}>Navigate</Text>
+              </Pressable>
+            </View>
+          )}
           <View style={styles.divider} />
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.aboutText}>{library.about}</Text>
@@ -280,6 +318,30 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     color: colors.accent,
     marginTop: 4,
+  },
+  mapPreview: {
+    height: 112,
+    borderRadius: 16,
+    marginTop: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+  },
+  mapPill: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  mapPillText: {
+    fontSize: 12,
+    fontFamily: font.semibold,
+    color: colors.foreground,
   },
   stickyBar: {
     paddingHorizontal: 20,

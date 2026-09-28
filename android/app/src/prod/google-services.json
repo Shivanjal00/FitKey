@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "806947013885-2d3hptheo69rkn69ulonud7a7o6jupnr.apps.googleusercontent.com",
+          "client_id": "806947013885-37d4qkumer9b3ob17ul1p6qmcro9779i.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.fitkey.app",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+            "certificate_hash": "55dbb37b6d9c2c90dba40d005ad442a191bb100e"
           }
         },
         {

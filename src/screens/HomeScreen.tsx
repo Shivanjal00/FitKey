@@ -2,6 +2,8 @@
 import { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useUserLocation } from '../store/UserLocationContext';
+import { withComputedDistance } from '../services/location.service';
 import {
   Search,
   SlidersHorizontal,
@@ -16,6 +18,10 @@ import { useFavorites } from '../store/FavoritesContext';
 
 const PASS_TYPE_CHIPS = new Set(['Daily Pass', 'Monthly Pass']);
 
+// Add these imports
+import { doc, getDoc } from '@react-native-firebase/firestore';
+import { db, authInstance } from '../services/firebase';
+
 import { ActivityIndicator } from 'react-native'; // Text already imported, ActivityIndicator is new
 import { getGyms } from '../services/firebase/gyms.service';
 import { useAsync } from '../lib/useAsync';
@@ -28,15 +34,30 @@ export default function HomeScreen() {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const { favorites, toggleFavorite } = useFavorites();
   const { data: gyms, loading } = useAsync(getGyms);
+  const {
+    coords,
+    address,
+    loading: locationLoading,
+    permissionDenied,
+  } = useUserLocation();
+
+  const { data: profile } = useAsync(async () => {
+    const uid = authInstance.currentUser?.uid;
+    if (!uid) return null;
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? (snap.data() as { address?: string }) : null;
+  }, []);
 
   const openGym = (id: string) =>
     navigation.navigate('GymDetails', { gymId: id });
 
   const filteredGyms = useMemo(() => {
     if (!gyms) return [];
-    if (PASS_TYPE_CHIPS.has(activeCategory)) return gyms;
-    return gyms.filter(g => g.category === activeCategory);
-  }, [activeCategory, gyms]);
+    const base = PASS_TYPE_CHIPS.has(activeCategory)
+      ? gyms
+      : gyms.filter(g => g.category === activeCategory);
+    return withComputedDistance(base, coords);
+  }, [activeCategory, gyms, coords]);
 
   if (loading) {
     return (
@@ -63,7 +84,13 @@ export default function HomeScreen() {
         <View>
           <Text style={styles.greeting}>Good morning, Aarav</Text>
           <Pressable style={styles.locationRow}>
-            <Text style={styles.location}>Sector 29, Gurugram</Text>
+            <Text style={styles.location}>
+              {permissionDenied
+                ? profile?.address ?? 'Enable location'
+                : locationLoading
+                ? profile?.address ?? 'Finding you…'
+                : address ?? profile?.address ?? 'Location unavailable'}
+            </Text>
             <ChevronDown size={16} color={colors.foreground} />
           </Pressable>
         </View>

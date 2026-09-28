@@ -4,7 +4,11 @@ import { View, Image, StyleSheet, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
-import { subscribeToAuthState } from '../services/firebase/auth.service';
+import {
+  subscribeToAuthState,
+  checkUserStatus,
+  buildRegistrationParams,
+} from '../services/firebase/auth.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
@@ -32,17 +36,30 @@ export default function SplashScreen({ navigation }: Props) {
 
     // Wait for both the splash hold time AND Firebase's first auth-state
     // callback (persisted session restore), then route once based on
-    // whichever resolves last — a signed-in user skips straight past
-    // Onboarding/Login into the app.
+    // whichever resolves last.
+    //
+    // A signed-in Firebase user isn't necessarily a fully registered one —
+    // someone can verify an OTP or sign in with Google and then close the
+    // app before finishing the Registration screen. Routing purely on
+    // "is there a session" would silently drop that person into Home with
+    // an incomplete profile next time they open the app, so this also
+    // checks registrationComplete and sends them back to finish
+    // Registration if it isn't set.
     let timedOut = false;
     let authChecked = false;
-    let signedIn = false;
     let navigated = false;
+    let route: 'MainTabs' | 'Onboarding' | 'Registration' = 'Onboarding';
+    let registrationParams: ReturnType<typeof buildRegistrationParams> | null =
+      null;
 
     const tryNavigate = () => {
       if (navigated || !timedOut || !authChecked) return;
       navigated = true;
-      navigation.replace(signedIn ? 'MainTabs' : 'Onboarding');
+      if (route === 'Registration' && registrationParams) {
+        navigation.replace('Registration', registrationParams);
+      } else {
+        navigation.replace(route as 'MainTabs' | 'Onboarding');
+      }
     };
 
     const timer = setTimeout(() => {
@@ -50,8 +67,24 @@ export default function SplashScreen({ navigation }: Props) {
       tryNavigate();
     }, HOLD_DURATION);
 
-    const unsubscribe = subscribeToAuthState(user => {
-      signedIn = !!user;
+    const unsubscribe = subscribeToAuthState(async user => {
+      if (!user) {
+        route = 'Onboarding';
+        authChecked = true;
+        tryNavigate();
+        return;
+      }
+      try {
+        const { isRegistered } = await checkUserStatus(user.uid);
+        route = isRegistered ? 'MainTabs' : 'Registration';
+      } catch {
+        // Firestore read failed — safer to send them to Registration (worst
+        // case, a registered user re-confirms already-saved details) than to
+        // guess Home for someone whose status we couldn't verify.
+        route = 'Registration';
+      }
+      if (route === 'Registration')
+        registrationParams = buildRegistrationParams(user);
       authChecked = true;
       tryNavigate();
     });

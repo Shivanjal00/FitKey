@@ -33,6 +33,8 @@ import { useAsync } from '../lib/useAsync';
 import { getGymById } from '../services/firebase/gyms.service';
 import { useFavorites } from '../store/FavoritesContext';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import MapView, { Marker } from 'react-native-maps';
+import { Linking } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GymDetails'>;
 const { width } = Dimensions.get('window');
@@ -144,12 +146,42 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
               {gym.area} · {gym.distance}
             </Text>
           </View>
-          <View style={styles.mapPreview}>
-            <View style={styles.mapPill}>
-              <NavigationIcon size={13} color={colors.foreground} />
-              <Text style={styles.mapPillText}>Navigate</Text>
+          {gym.location && (
+            <View style={styles.mapPreview}>
+              <MapView
+                style={{ flex: 1 }}
+                initialRegion={{
+                  latitude: gym.location.latitude,
+                  longitude: gym.location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                pointerEvents="none"
+              >
+                <Marker coordinate={gym.location} />
+              </MapView>
+              <Pressable
+                style={styles.mapPill}
+                onPress={() => {
+                  const geoUrl = `google.navigation:q=${
+                    gym.location!.latitude
+                  },${gym.location!.longitude}`;
+                  Linking.openURL(geoUrl).catch(() =>
+                    Linking.openURL(
+                      `https://www.google.com/maps/dir/?api=1&destination=${
+                        gym.location!.latitude
+                      },${gym.location!.longitude}`,
+                    ),
+                  );
+                }}
+              >
+                <NavigationIcon size={13} color={colors.foreground} />
+                <Text style={styles.mapPillText}>Navigate</Text>
+              </Pressable>
             </View>
-          </View>
+          )}
 
           <View style={[styles.rowIconText, { marginTop: 16 }]}>
             <Clock size={16} color={colors.mutedForeground} />
@@ -348,12 +380,14 @@ const styles = StyleSheet.create({
     height: 112,
     borderRadius: 16,
     marginTop: 12,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
+    backgroundColor: colors.border,
   },
+
   mapPill: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
