@@ -1,14 +1,22 @@
 // screens/SelectSlotScreen.tsx
 import { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS } from '../data/gyms';
 import SegmentedControl from '../components/SegmentedControl';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useAsync } from '../lib/useAsync';
+import { getGymById } from '../services/firebase/gyms.service';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SelectSlot'>;
 
@@ -30,16 +38,16 @@ const SLOTS_BY_SEGMENT: Record<string, string[]> = {
 
 function buildDays() {
   const labels = ['Today', 'Tomorrow'];
-  const days = [];
+  const days: { date: Date; top: string; bottom: string }[] = [];
   const now = new Date();
   for (let i = 0; i < 7; i++) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
-    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum = d.getDate();
     days.push({
-      top: i < 2 ? labels[i] : weekday,
-      bottom: i < 2 ? '' : String(dayNum),
+      date: d,
+      top:
+        i < 2 ? labels[i] : d.toLocaleDateString('en-US', { weekday: 'short' }),
+      bottom: i < 2 ? '' : String(d.getDate()),
     });
   }
   return days;
@@ -48,12 +56,26 @@ function buildDays() {
 export default function SelectSlotScreen({ route, navigation }: Props) {
   const insets = useSafeInsets();
   const { gymId, planIndex } = route.params;
-  const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
+  const { data: gym, loading } = useAsync(() => getGymById(gymId), [gymId]);
   const days = useMemo(buildDays, []);
-
   const [dateIndex, setDateIndex] = useState(0);
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [slot, setSlot] = useState<string | null>(null);
+
+  if (loading || !gym) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
 
   const slots = SLOTS_BY_SEGMENT[SEGMENTS[segmentIndex]];
 
@@ -68,8 +90,14 @@ export default function SelectSlotScreen({ route, navigation }: Props) {
 
   const onContinue = () => {
     if (!slot) return;
-    navigation.navigate('BookingSummary', { gymId, planIndex, slot });
+    navigation.navigate('BookingSummary', {
+      gymId,
+      planIndex,
+      slot,
+      dateISO: days[dateIndex].date.toISOString(),
+    });
   };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

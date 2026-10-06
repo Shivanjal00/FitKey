@@ -18,18 +18,33 @@ import {
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS, FILTERS } from '../data/gyms';
 import GymCardRow from '../components/GymCardRow';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { useAsync } from '../lib/useAsync';
+import { getGyms } from '../services/firebase/gyms.service';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Search'>;
 
 const RECENTS = ['CrossFit near me', 'Yoga studios', 'Women only gyms'];
+const FILTERS = [
+  'Distance',
+  'Price',
+  'Rating',
+  'Open Now',
+  'Parking',
+  'AC',
+  'Locker',
+  'Shower',
+  'Women Only',
+  'Personal Trainer',
+];
 
 export default function SearchScreen({ navigation }: Props) {
   const insets = useSafeInsets();
   const [query, setQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+
+  const { data: gyms } = useAsync(getGyms);
 
   const toggleFilter = (f: string) => {
     setActiveFilters(prev => {
@@ -40,10 +55,10 @@ export default function SearchScreen({ navigation }: Props) {
   };
 
   const results = query.trim()
-    ? GYMS.filter(g =>
+    ? (gyms ?? []).filter(g =>
         g.name.toLowerCase().includes(query.trim().toLowerCase()),
       )
-    : GYMS;
+    : gyms ?? [];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

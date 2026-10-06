@@ -1,20 +1,79 @@
 // src/screens/BookingSummaryScreen.tsx
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS } from '../data/gyms';
+import { useAsync } from '../lib/useAsync';
+import { getGymById } from '../services/firebase/gyms.service';
+import { createBooking } from '../services/firebase/bookings.service';
+import { authInstance } from '../services/firebase';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingSummary'>;
 
 export default function BookingSummaryScreen({ route, navigation }: Props) {
   const insets = useSafeInsets();
-  const { gymId, planIndex, slot } = route.params;
-  const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
+  const { gymId, planIndex, slot, dateISO } = route.params;
+  const { data: gym, loading } = useAsync(() => getGymById(gymId), [gymId]);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  if (loading || !gym) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
   const plan = gym.plans[planIndex];
+  const slotDate = new Date(dateISO);
+  const dateLabel = slotDate.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const handleConfirm = async () => {
+    const uid = authInstance.currentUser?.uid;
+    if (!uid) return;
+    setErrorMsg('');
+    setSubmitting(true);
+    try {
+      const bookingId = await createBooking({
+        userId: uid,
+        gymId: gym.id,
+        gymNameSnapshot: gym.name,
+        gymImageSnapshot: gym.image,
+        planName: plan.name,
+        slotDate,
+        slotTime: slot,
+      });
+      navigation.replace('BookingStatus', { bookingId });
+    } catch {
+      setErrorMsg('Could not confirm your booking. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -40,10 +99,12 @@ export default function BookingSummaryScreen({ route, navigation }: Props) {
         <View style={styles.card}>
           <Row label="Membership" value={plan.name} />
           <Divider />
-          <Row label="Date" value="Fri, 18 Jul 2026" />
+          <Row label="Date" value={dateLabel} />
           <Divider />
           <Row label="Time" value={slot} />
         </View>
+
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
       </View>
 
       <View
@@ -51,36 +112,26 @@ export default function BookingSummaryScreen({ route, navigation }: Props) {
       >
         <Pressable
           style={styles.cta}
-          onPress={() => navigation.navigate('BookingStatus', { gymId })}
+          onPress={handleConfirm}
+          disabled={submitting}
         >
-          <Text style={styles.ctaText}>Confirm Booking</Text>
+          <Text style={styles.ctaText}>
+            {submitting ? 'Confirming…' : 'Confirm Booking'}
+          </Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-function Row({
-  label,
-  value,
-  bold,
-}: {
-  label: string;
-  value: string;
-  bold?: boolean;
-}) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.rowLabel, bold && styles.rowLabelBold]}>
-        {label}
-      </Text>
-      <Text style={[styles.rowValue, bold && styles.rowValueBold]}>
-        {value}
-      </Text>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
     </View>
   );
 }
-
 function Divider() {
   return <View style={styles.rowDivider} />;
 }
@@ -145,18 +196,19 @@ const styles = StyleSheet.create({
     fontFamily: font.regular,
     color: colors.mutedForeground,
   },
-  rowLabelBold: {
-    fontFamily: font.bold,
-    color: colors.foreground,
-    fontSize: 14,
-  },
   rowValue: {
     fontSize: 13.5,
     fontFamily: font.semibold,
     color: colors.foreground,
   },
-  rowValueBold: { fontFamily: font.bold, fontSize: 16 },
   rowDivider: { height: 1, backgroundColor: colors.border },
+  errorText: {
+    marginTop: 16,
+    fontSize: 12.5,
+    fontFamily: font.medium,
+    color: colors.error,
+    textAlign: 'center',
+  },
   ctaWrap: {
     paddingHorizontal: 20,
     paddingTop: 14,

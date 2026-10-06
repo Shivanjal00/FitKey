@@ -1,23 +1,32 @@
 // src/screens/FavoritesScreen.tsx
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Heart } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS } from '../data/gyms';
+import { useAsync } from '../lib/useAsync';
 import { useFavorites } from '../store/FavoritesContext';
+import { getGymsByIds } from '../services/firebase/gyms.service';
 import GymCardRow from '../components/GymCardRow';
-import GymCardCompact from '../components/GymCardCompact';
 import type { TabScreenProps } from '../navigation/TabNavigator';
 
 type Props = TabScreenProps<'Favorites'>;
 
-const COLLECTIONS = ['Weekend picks', 'Close to work', 'Best rated'];
-
 export default function FavoritesScreen({ navigation }: Props) {
   const insets = useSafeInsets();
   const { favorites } = useFavorites();
-  const favoriteGyms = GYMS.filter(g => favorites.has(g.id));
+  const ids = useMemo(() => Array.from(favorites), [favorites]);
+  const { data: favoriteGyms, loading } = useAsync(
+    () => getGymsByIds(ids),
+    [ids.join(',')],
+  );
 
   return (
     <ScrollView
@@ -26,24 +35,13 @@ export default function FavoritesScreen({ navigation }: Props) {
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.title}>Favorites</Text>
-
-      <Text style={styles.sectionLabel}>Collections</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.collectionsRow}
-      >
-        {COLLECTIONS.map(c => (
-          <View key={c} style={styles.collectionChip}>
-            <Text style={styles.collectionText}>{c}</Text>
-          </View>
-        ))}
-      </ScrollView>
-
       <Text style={styles.sectionLabel}>
-        Saved gyms · {favoriteGyms.length}
+        Saved gyms · {favoriteGyms?.length ?? 0}
       </Text>
-      {favoriteGyms.length > 0 ? (
+
+      {loading ? (
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
+      ) : favoriteGyms && favoriteGyms.length > 0 ? (
         <View style={styles.savedList}>
           {favoriteGyms.map(gym => (
             <GymCardRow
@@ -64,21 +62,6 @@ export default function FavoritesScreen({ navigation }: Props) {
           </Text>
         </View>
       )}
-
-      <Text style={styles.sectionLabel}>Recently viewed</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.hScroll}
-      >
-        {GYMS.slice(0, 4).map(gym => (
-          <GymCardCompact
-            key={gym.id}
-            gym={gym}
-            onPress={() => navigation.navigate('GymDetails', { gymId: gym.id })}
-          />
-        ))}
-      </ScrollView>
     </ScrollView>
   );
 }
@@ -100,20 +83,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 10,
   },
-  collectionsRow: { gap: 8, paddingHorizontal: 20 },
-  collectionChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  collectionText: {
-    fontSize: 12.5,
-    fontFamily: font.medium,
-    color: colors.foreground,
-  },
   savedList: { gap: 12, paddingHorizontal: 20 },
   emptyState: {
     alignItems: 'center',
@@ -132,5 +101,4 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     textAlign: 'center',
   },
-  hScroll: { gap: 12, paddingHorizontal: 20 },
 });

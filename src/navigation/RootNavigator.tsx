@@ -36,9 +36,14 @@ export type RootStackParamList = {
     | undefined;
   GymDetails: { gymId: string };
   SelectSlot: { gymId: string; planIndex: number };
-  BookingSummary: { gymId: string; planIndex: number; slot: string };
+  BookingSummary: {
+    gymId: string;
+    planIndex: number;
+    slot: string;
+    dateISO: string;
+  };
   // Payment: { gymId: string; planIndex: number; slot: string; total: number }; // disabled
-  BookingStatus: { gymId: string };
+  BookingStatus: { bookingId: string };
   Search: undefined;
   Notifications: undefined;
   LibraryDetails: { libraryId: string };

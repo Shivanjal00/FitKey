@@ -1,5 +1,18 @@
 // src/store/FavoritesContext.tsx
-import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+  ReactNode,
+} from 'react';
+import { subscribeToAuthState } from '../services/firebase/auth.service';
+import {
+  subscribeToFavorites,
+  addFavorite,
+  removeFavorite,
+} from '../services/firebase/favorites.service';
 
 type FavoritesContextValue = {
   favorites: Set<string>;
@@ -10,14 +23,37 @@ type FavoritesContextValue = {
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
-  const [favorites, setFavorites] = useState<Set<string>>(new Set(['1', '3']));
+  const [uid, setUid] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  const toggleFavorite = (id: string) => {
+  useEffect(() => subscribeToAuthState(user => setUid(user?.uid ?? null)), []);
+
+  useEffect(() => {
+    if (!uid) {
+      setFavorites(new Set());
+      return;
+    }
+    return subscribeToFavorites(uid, setFavorites);
+  }, [uid]);
+
+  const toggleFavorite = async (id: string) => {
+    if (!uid) return;
+    const wasFavorite = favorites.has(id);
     setFavorites(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      wasFavorite ? next.delete(id) : next.add(id);
       return next;
     });
+    try {
+      wasFavorite ? await removeFavorite(uid, id) : await addFavorite(uid, id);
+    } catch (err) {
+      console.warn('[favorites] write failed, reverting:', err);
+      setFavorites(prev => {
+        const next = new Set(prev);
+        wasFavorite ? next.add(id) : next.delete(id);
+        return next;
+      });
+    }
   };
 
   const value = useMemo(
@@ -26,7 +62,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       isFavorite: (id: string) => favorites.has(id),
       toggleFavorite,
     }),
-    [favorites],
+    [favorites, uid],
   );
 
   return (

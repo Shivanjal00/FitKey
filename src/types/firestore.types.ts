@@ -1,4 +1,33 @@
-// src/types/firestore.types.ts
+import type { Timestamp } from '@react-native-firebase/firestore';
+
+export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
+export type Booking = {
+  id: string;
+  userId: string;
+  gymId: string;
+  gymNameSnapshot: string;
+  gymImageSnapshot: string;
+  planName: string;
+  slotDate: Timestamp;
+  slotTime: string;
+  status: BookingStatus;
+  createdAt: Timestamp;
+};
+export type NotificationType =
+  | 'booking_approved'
+  | 'booking_rejected'
+  | 'booking_reminder'
+  | 'nearby_offer'
+  | 'promotion';
+
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: Timestamp;
+};
 export type Plan = {
   name: string;
   price: number;

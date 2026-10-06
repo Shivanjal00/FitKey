@@ -3,8 +3,8 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { QrCode } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
-import type { Booking, BookingStatus } from '../data/bookings';
-import type { Gym } from '../data/gyms';
+import type { Booking, BookingStatus } from '../types/firestore.types';
+import type { Gym } from '../types/firestore.types';
 
 const BADGE: Record<
   BookingStatus,
@@ -54,7 +54,12 @@ export default function BookingCard({
             </View>
           </View>
           <Text style={styles.meta}>
-            {booking.planName} · {booking.date} · {booking.time}
+            {booking.planName} ·{' '}
+            {booking.slotDate.toDate().toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'short',
+            })}{' '}
+            · {booking.slotTime}
           </Text>
         </View>
       </View>

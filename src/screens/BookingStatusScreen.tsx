@@ -7,21 +7,26 @@ import {
   Pressable,
   StyleSheet,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CheckCircle2 } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
-import { GYMS } from '../data/gyms';
+import { useAsync } from '../lib/useAsync';
+import { getBookingById } from '../services/firebase/bookings.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingStatus'>;
 
 export default function BookingStatusScreen({ route, navigation }: Props) {
   const insets = useSafeInsets();
-  const { gymId } = route.params;
-  const gym = GYMS.find(g => g.id === gymId) ?? GYMS[0];
+  const { bookingId } = route.params;
+  const { data: booking, loading } = useAsync(
+    () => getBookingById(bookingId),
+    [bookingId],
+  );
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -43,6 +48,21 @@ export default function BookingStatusScreen({ route, navigation }: Props) {
     return () => loop.stop();
   }, [pulse]);
 
+  if (loading || !booking) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
   const ringScale = pulse.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 1.25],
@@ -50,6 +70,11 @@ export default function BookingStatusScreen({ route, navigation }: Props) {
   const ringOpacity = pulse.interpolate({
     inputRange: [0, 1],
     outputRange: [0.35, 0],
+  });
+  const dateLabel = booking.slotDate.toDate().toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
   });
 
   return (
@@ -79,14 +104,20 @@ export default function BookingStatusScreen({ route, navigation }: Props) {
 
         <Text style={styles.title}>Booking Confirmed</Text>
         <Text style={styles.subtitle}>
-          You're all set at {gym.name}. We'll see you at your booked slot.
+          You're all set at {booking.gymNameSnapshot}. We'll see you at your
+          booked slot.
         </Text>
 
         <View style={styles.gymCard}>
-          <Image source={{ uri: gym.image }} style={styles.gymImage} />
+          <Image
+            source={{ uri: booking.gymImageSnapshot }}
+            style={styles.gymImage}
+          />
           <View>
-            <Text style={styles.gymName}>{gym.name}</Text>
-            <Text style={styles.gymMeta}>Fri, 18 Jul · 6:00 AM</Text>
+            <Text style={styles.gymName}>{booking.gymNameSnapshot}</Text>
+            <Text style={styles.gymMeta}>
+              {dateLabel} · {booking.slotTime}
+            </Text>
           </View>
         </View>
       </View>
