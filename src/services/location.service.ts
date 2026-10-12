@@ -17,6 +17,30 @@ try {
 
 export type Coordinates = { latitude: number; longitude: number };
 
+// Converts a Firestore GeoPoint (or any {latitude, longitude}-like value)
+// into plain numbers that are safe to hand to native views like MapView.
+// Native code can't read a GeoPoint's getters, which is what crashed the map.
+// Returns null if the value is missing or isn't a valid coordinate.
+export function toCoordinates(value: unknown): Coordinates | null {
+  const v = value as
+    | {
+        latitude?: unknown;
+        longitude?: unknown;
+        _latitude?: unknown;
+        _longitude?: unknown;
+      }
+    | null
+    | undefined;
+  if (!v) return null;
+  const lat = v.latitude ?? v._latitude;
+  const lng = v.longitude ?? v._longitude;
+  if (lat == null || lng == null) return null;
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude };
+}
+
 export async function requestLocationPermission(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
   const FINE = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
@@ -168,14 +192,15 @@ export function withComputedDistance<
 ): (T & { distanceKm: number | null; distance: string })[] {
   return items
     .map(item => {
-      if (!userCoords || !item.location) {
+      const itemCoords = toCoordinates(item.location);
+      if (!userCoords || !itemCoords) {
         return {
           ...item,
           distanceKm: null,
           distance: (item as any).distance || '—',
         };
       }
-      const distanceKm = calculateDistanceKm(userCoords, item.location);
+      const distanceKm = calculateDistanceKm(userCoords, itemCoords);
       return { ...item, distanceKm, distance: formatDistance(distanceKm) };
     })
     .sort((a, b) => {

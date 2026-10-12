@@ -9,8 +9,10 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import MapView, { Marker } from 'react-native-maps';
 import {
   ArrowLeft,
   Heart,
@@ -32,9 +34,13 @@ import { useSafeInsets } from '../lib/useSafeInsets';
 import { useAsync } from '../lib/useAsync';
 import { getGymById } from '../services/firebase/gyms.service';
 import { useFavorites } from '../store/FavoritesContext';
+import { useUserLocation } from '../store/UserLocationContext';
+import {
+  toCoordinates,
+  calculateDistanceKm,
+  formatDistance,
+} from '../services/location.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import MapView, { Marker } from 'react-native-maps';
-import { Linking } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GymDetails'>;
 const { width } = Dimensions.get('window');
@@ -53,6 +59,7 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
   const { gymId } = route.params;
   const { data: gym, loading } = useAsync(() => getGymById(gymId), [gymId]);
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { coords: userCoords } = useUserLocation();
 
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [planIndex, setPlanIndex] = useState(0);
@@ -65,32 +72,64 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
     );
   }
 
+  // Fallbacks so a listing missing one of these fields can't crash the screen.
+  const gallery = gym.gallery?.length
+    ? gym.gallery
+    : gym.image
+    ? [gym.image]
+    : [];
+  const tags = gym.tags ?? [];
+  const plans = gym.plans ?? [];
+
+  // Plain numbers, safe for the native map (a raw GeoPoint is not).
+  const mapCoords = toCoordinates(gym.location);
+  const distanceLabel =
+    userCoords && mapCoords
+      ? formatDistance(calculateDistanceKm(userCoords, mapCoords))
+      : gym.distance || null;
+  const locationLine = [gym.area, distanceLabel].filter(Boolean).join(' · ');
+
   const favorite = isFavorite(gym.id);
+  const selectedPlan = plans[planIndex] ?? plans[0];
 
   const onScrollGallery = (e: any) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / width);
     setGalleryIndex(index);
   };
 
+  const openNavigation = () => {
+    if (!mapCoords) return;
+    const { latitude, longitude } = mapCoords;
+    Linking.openURL(`google.navigation:q=${latitude},${longitude}`).catch(() =>
+      Linking.openURL(
+        `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
+      ),
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.galleryWrap}>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={onScrollGallery}
-          >
-            {gym.gallery.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={{ width, height: 288 }}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
+          {gallery.length > 0 ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onScrollGallery}
+            >
+              {gallery.map((uri, i) => (
+                <Image
+                  key={i}
+                  source={{ uri }}
+                  style={{ width, height: 288 }}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.galleryWrap, styles.galleryFallback]} />
+          )}
 
           <View style={[styles.galleryTopBar, { top: insets.top }]}>
             <Pressable
@@ -116,17 +155,19 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
             </View>
           </View>
 
-          <View style={styles.dotsRow}>
-            {gym.gallery.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.galleryDot,
-                  { opacity: i === galleryIndex ? 1 : 0.4 },
-                ]}
-              />
-            ))}
-          </View>
+          {gallery.length > 1 && (
+            <View style={styles.dotsRow}>
+              {gallery.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.galleryDot,
+                    { opacity: i === galleryIndex ? 1 : 0.4 },
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.content}>
@@ -142,41 +183,27 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
 
           <View style={styles.rowIconText}>
             <MapPin size={16} color={colors.mutedForeground} />
-            <Text style={styles.mutedText}>
-              {gym.area} · {gym.distance}
-            </Text>
+            <Text style={styles.mutedText}>{locationLine}</Text>
           </View>
-          {gym.location && (
+
+          {mapCoords && (
             <View style={styles.mapPreview}>
-              <MapView
-                style={{ flex: 1 }}
-                initialRegion={{
-                  latitude: gym.location.latitude,
-                  longitude: gym.location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                pointerEvents="none"
-              >
-                <Marker coordinate={gym.location} />
-              </MapView>
-              <Pressable
-                style={styles.mapPill}
-                onPress={() => {
-                  const geoUrl = `google.navigation:q=${
-                    gym.location!.latitude
-                  },${gym.location!.longitude}`;
-                  Linking.openURL(geoUrl).catch(() =>
-                    Linking.openURL(
-                      `https://www.google.com/maps/dir/?api=1&destination=${
-                        gym.location!.latitude
-                      },${gym.location!.longitude}`,
-                    ),
-                  );
-                }}
-              >
+              <View style={{ flex: 1 }} pointerEvents="none">
+                <MapView
+                  style={{ flex: 1 }}
+                  initialRegion={{
+                    latitude: mapCoords.latitude,
+                    longitude: mapCoords.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                >
+                  <Marker coordinate={mapCoords} />
+                </MapView>
+              </View>
+              <Pressable style={styles.mapPill} onPress={openNavigation}>
                 <NavigationIcon size={13} color={colors.foreground} />
                 <Text style={styles.mapPillText}>Navigate</Text>
               </Pressable>
@@ -203,54 +230,67 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.aboutText}>{gym.about}</Text>
 
-          <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Facilities</Text>
-          <View style={styles.facilitiesGrid}>
-            {gym.tags.map(tag => {
-              const Icon = FACILITY_ICONS[tag] ?? Dumbbell;
-              return (
-                <View key={tag} style={styles.facilityItem}>
-                  <View style={styles.facilityIconWrap}>
-                    <Icon
-                      size={20}
-                      color={colors.foreground}
-                      strokeWidth={1.8}
-                    />
-                  </View>
-                  <Text style={styles.facilityLabel}>{tag}</Text>
-                </View>
-              );
-            })}
-          </View>
+          {tags.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Facilities</Text>
+              <View style={styles.facilitiesGrid}>
+                {tags.map(tag => {
+                  const Icon = FACILITY_ICONS[tag] ?? Dumbbell;
+                  return (
+                    <View key={tag} style={styles.facilityItem}>
+                      <View style={styles.facilityIconWrap}>
+                        <Icon
+                          size={20}
+                          color={colors.foreground}
+                          strokeWidth={1.8}
+                        />
+                      </View>
+                      <Text style={styles.facilityLabel}>{tag}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
-          <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Membership plans</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12 }}
-          >
-            {gym.plans.map((plan, i) => {
-              const selected = i === planIndex;
-              return (
-                <Pressable
-                  key={plan.name}
-                  onPress={() => setPlanIndex(i)}
-                  style={[styles.planCard, selected && styles.planCardSelected]}
-                >
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  {selected && (
-                    <Text style={styles.planSelectedLabel}>Selected</Text>
-                  )}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          {plans.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Membership plans</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12 }}
+              >
+                {plans.map((plan, i) => {
+                  const selected = i === planIndex;
+                  return (
+                    <Pressable
+                      key={plan.name}
+                      onPress={() => setPlanIndex(i)}
+                      style={[
+                        styles.planCard,
+                        selected && styles.planCardSelected,
+                      ]}
+                    >
+                      <Text style={styles.planName}>{plan.name}</Text>
+                      {selected && (
+                        <Text style={styles.planSelectedLabel}>Selected</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
 
-          <View style={[styles.rowIconText, { marginTop: 24 }]}>
-            <Dumbbell size={18} color={colors.mutedForeground} />
-            <Text style={[styles.mutedText, { flex: 1 }]}>{gym.trainer}</Text>
-          </View>
+          {!!gym.trainer && (
+            <View style={[styles.rowIconText, { marginTop: 24 }]}>
+              <Dumbbell size={18} color={colors.mutedForeground} />
+              <Text style={[styles.mutedText, { flex: 1 }]}>{gym.trainer}</Text>
+            </View>
+          )}
 
           <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Policies</Text>
@@ -262,25 +302,27 @@ export default function GymDetailsScreen({ route, navigation }: Props) {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.stickyBar,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={styles.stickyPlanLabel}>Selected plan</Text>
-          <Text style={styles.stickyPlanName}>{gym.plans[planIndex].name}</Text>
-        </View>
-        <Pressable
-          style={styles.bookButton}
-          onPress={() =>
-            navigation.navigate('SelectSlot', { gymId: gym.id, planIndex })
-          }
+      {selectedPlan && (
+        <View
+          style={[
+            styles.stickyBar,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
         >
-          <Text style={styles.bookButtonText}>Book Pass</Text>
-        </Pressable>
-      </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.stickyPlanLabel}>Selected plan</Text>
+            <Text style={styles.stickyPlanName}>{selectedPlan.name}</Text>
+          </View>
+          <Pressable
+            style={styles.bookButton}
+            onPress={() =>
+              navigation.navigate('SelectSlot', { gymId: gym.id, planIndex })
+            }
+          >
+            <Text style={styles.bookButtonText}>Book Pass</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -293,6 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   galleryWrap: { height: 288, width: '100%' },
+  galleryFallback: { backgroundColor: colors.border },
   galleryTopBar: {
     position: 'absolute',
     left: 20,
@@ -383,7 +426,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.border,
   },
-
   mapPill: {
     position: 'absolute',
     bottom: 10,

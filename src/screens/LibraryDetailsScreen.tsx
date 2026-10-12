@@ -11,6 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import MapView, { Marker } from 'react-native-maps';
 import {
   ArrowLeft,
   Star,
@@ -27,8 +28,13 @@ import { font } from '../theme/typography';
 import { useSafeInsets } from '../lib/useSafeInsets';
 import { useAsync } from '../lib/useAsync';
 import { getLibraryById } from '../services/firebase/libraries.service';
+import { useUserLocation } from '../store/UserLocationContext';
+import {
+  toCoordinates,
+  calculateDistanceKm,
+  formatDistance,
+} from '../services/location.service';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import MapView, { Marker } from 'react-native-maps';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LibraryDetails'>;
 
@@ -47,6 +53,7 @@ export default function LibraryDetailsScreen({ route, navigation }: Props) {
     () => getLibraryById(libraryId),
     [libraryId],
   );
+  const { coords: userCoords } = useUserLocation();
   const [planIndex, setPlanIndex] = useState(0);
   const [reserved, setReserved] = useState(false);
 
@@ -57,6 +64,31 @@ export default function LibraryDetailsScreen({ route, navigation }: Props) {
       </View>
     );
   }
+
+  // Fallbacks so a listing missing one of these fields can't crash the screen.
+  const tags = library.tags ?? [];
+  const plans = library.plans ?? [];
+  const selectedPlan = plans[planIndex] ?? plans[0];
+
+  // Plain numbers, safe for the native map (a raw GeoPoint is not).
+  const mapCoords = toCoordinates(library.location);
+  const distanceLabel =
+    userCoords && mapCoords
+      ? formatDistance(calculateDistanceKm(userCoords, mapCoords))
+      : library.distance || null;
+  const locationLine = [library.area, distanceLabel]
+    .filter(Boolean)
+    .join(' · ');
+
+  const openNavigation = () => {
+    if (!mapCoords) return;
+    const { latitude, longitude } = mapCoords;
+    Linking.openURL(`google.navigation:q=${latitude},${longitude}`).catch(() =>
+      Linking.openURL(
+        `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
+      ),
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -81,16 +113,16 @@ export default function LibraryDetailsScreen({ route, navigation }: Props) {
             <Star size={14} color={colors.warn} fill={colors.warn} />
             <Text style={styles.ratingText}>{library.rating}</Text>
             <Text style={styles.dotSep}>·</Text>
-            <Text style={styles.area}>
-              {library.area} · {library.distance}
-            </Text>
+            <Text style={styles.area}>{locationLine}</Text>
           </View>
 
           <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Users size={16} color={colors.mutedForeground} />
-              <Text style={styles.infoText}>{library.seats} seats</Text>
-            </View>
+            {typeof library.seats === 'number' && (
+              <View style={styles.infoItem}>
+                <Users size={16} color={colors.mutedForeground} />
+                <Text style={styles.infoText}>{library.seats} seats</Text>
+              </View>
+            )}
             <View style={styles.infoItem}>
               <Clock size={16} color={colors.mutedForeground} />
               <Text style={styles.infoText}>{library.hours}</Text>
@@ -104,109 +136,111 @@ export default function LibraryDetailsScreen({ route, navigation }: Props) {
               {library.open ? 'Open now' : 'Closed now'}
             </Text>
           </View>
-          {library.location && (
+
+          {mapCoords && (
             <View style={styles.mapPreview}>
-              <MapView
-                style={{ flex: 1 }}
-                initialRegion={{
-                  latitude: library.location.latitude,
-                  longitude: library.location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-                scrollEnabled={false}
-                zoomEnabled={false}
-                pointerEvents="none"
-              >
-                <Marker coordinate={library.location} />
-              </MapView>
-              <Pressable
-                style={styles.mapPill}
-                onPress={() => {
-                  const geoUrl = `google.navigation:q=${
-                    library.location!.latitude
-                  },${library.location!.longitude}`;
-                  Linking.openURL(geoUrl).catch(() =>
-                    Linking.openURL(
-                      `https://www.google.com/maps/dir/?api=1&destination=${
-                        library.location!.latitude
-                      },${library.location!.longitude}`,
-                    ),
-                  );
-                }}
-              >
+              <View style={{ flex: 1 }} pointerEvents="none">
+                <MapView
+                  style={{ flex: 1 }}
+                  initialRegion={{
+                    latitude: mapCoords.latitude,
+                    longitude: mapCoords.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                >
+                  <Marker coordinate={mapCoords} />
+                </MapView>
+              </View>
+              <Pressable style={styles.mapPill} onPress={openNavigation}>
                 <MapPin size={13} color={colors.foreground} />
                 <Text style={styles.mapPillText}>Navigate</Text>
               </Pressable>
             </View>
           )}
+
           <View style={styles.divider} />
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.aboutText}>{library.about}</Text>
 
-          <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Amenities</Text>
-          <View style={styles.tagsGrid}>
-            {library.tags.map(tag => {
-              const Icon = TAG_ICONS[tag] ?? Sofa;
-              return (
-                <View key={tag} style={styles.tagItem}>
-                  <View style={styles.tagIconWrap}>
-                    <Icon
-                      size={20}
-                      color={colors.foreground}
-                      strokeWidth={1.8}
-                    />
-                  </View>
-                  <Text style={styles.tagLabel}>{tag}</Text>
-                </View>
-              );
-            })}
-          </View>
+          {tags.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Amenities</Text>
+              <View style={styles.tagsGrid}>
+                {tags.map(tag => {
+                  const Icon = TAG_ICONS[tag] ?? Sofa;
+                  return (
+                    <View key={tag} style={styles.tagItem}>
+                      <View style={styles.tagIconWrap}>
+                        <Icon
+                          size={20}
+                          color={colors.foreground}
+                          strokeWidth={1.8}
+                        />
+                      </View>
+                      <Text style={styles.tagLabel}>{tag}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
 
-          <View style={styles.divider} />
-          <Text style={styles.sectionTitle}>Passes</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12 }}
-          >
-            {library.plans.map((plan, i) => {
-              const selected = i === planIndex;
-              return (
-                <Pressable
-                  key={plan.name}
-                  onPress={() => setPlanIndex(i)}
-                  style={[styles.planCard, selected && styles.planCardSelected]}
-                >
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  {selected && (
-                    <Text style={styles.planSelectedLabel}>Selected</Text>
-                  )}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          {plans.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Passes</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12 }}
+              >
+                {plans.map((plan, i) => {
+                  const selected = i === planIndex;
+                  return (
+                    <Pressable
+                      key={plan.name}
+                      onPress={() => setPlanIndex(i)}
+                      style={[
+                        styles.planCard,
+                        selected && styles.planCardSelected,
+                      ]}
+                    >
+                      <Text style={styles.planName}>{plan.name}</Text>
+                      {selected && (
+                        <Text style={styles.planSelectedLabel}>Selected</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          )}
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.stickyBar,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-      >
-        <Pressable
-          style={[styles.reserveButton, reserved && styles.reserveButtonDone]}
-          onPress={() => setReserved(true)}
+      {selectedPlan && (
+        <View
+          style={[
+            styles.stickyBar,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
         >
-          <Text style={styles.reserveButtonText}>
-            {reserved
-              ? 'Seat Reserved ✓'
-              : `Reserve Seat · ${library.plans[planIndex].name}`}
-          </Text>
-        </Pressable>
-      </View>
+          <Pressable
+            style={[styles.reserveButton, reserved && styles.reserveButtonDone]}
+            onPress={() => setReserved(true)}
+          >
+            <Text style={styles.reserveButtonText}>
+              {reserved
+                ? 'Seat Reserved ✓'
+                : `Reserve Seat · ${selectedPlan.name}`}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -259,6 +293,30 @@ const styles = StyleSheet.create({
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   infoText: { fontSize: 13, fontFamily: font.medium, color: colors.foreground },
   openStatus: { fontSize: 12, fontFamily: font.semibold, marginLeft: 'auto' },
+  mapPreview: {
+    height: 112,
+    borderRadius: 16,
+    marginTop: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+  },
+  mapPill: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  mapPillText: {
+    fontSize: 12,
+    fontFamily: font.semibold,
+    color: colors.foreground,
+  },
   divider: {
     height: 1,
     backgroundColor: colors.border,
@@ -318,30 +376,6 @@ const styles = StyleSheet.create({
     fontFamily: font.semibold,
     color: colors.accent,
     marginTop: 4,
-  },
-  mapPreview: {
-    height: 112,
-    borderRadius: 16,
-    marginTop: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.border,
-  },
-  mapPill: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  mapPillText: {
-    fontSize: 12,
-    fontFamily: font.semibold,
-    color: colors.foreground,
   },
   stickyBar: {
     paddingHorizontal: 20,
