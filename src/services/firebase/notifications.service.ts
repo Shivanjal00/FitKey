@@ -1,12 +1,13 @@
-// src/services/firebase/notifications.service.ts
 import {
   collection,
+  doc,
   query,
   orderBy,
   onSnapshot,
+  writeBatch,
 } from '@react-native-firebase/firestore';
 import { db } from './index';
-import type { NotificationItem } from '../../types/firestore.types'; // add this type the same way Booking was added
+import type { NotificationItem } from '../../types/firestore.types';
 
 export function subscribeToNotifications(
   uid: string,
@@ -21,4 +22,13 @@ export function subscribeToNotifications(
       snapshot.docs.map(d => ({ id: d.id, ...d.data() } as NotificationItem)),
     );
   });
+}
+
+export async function markAllNotificationsRead(uid: string, ids: string[]) {
+  if (ids.length === 0) return;
+  const batch = writeBatch(db);
+  ids.forEach(id =>
+    batch.update(doc(db, 'users', uid, 'notifications', id), { read: true }),
+  );
+  await batch.commit();
 }

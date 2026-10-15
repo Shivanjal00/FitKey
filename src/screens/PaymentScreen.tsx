@@ -14,7 +14,6 @@
 // import { colors } from '../theme/colors';
 // import { font } from '../theme/typography';
 // import { useSafeInsets } from '../lib/useSafeInsets';
-// import { GYMS } from '../data/gyms';
 // import QrPattern from '../components/QrPattern';
 // import type { RootStackParamList } from '../navigation/RootNavigator';
 

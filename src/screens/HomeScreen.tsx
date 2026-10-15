@@ -25,8 +25,8 @@ import { db, authInstance } from '../services/firebase';
 import { ActivityIndicator } from 'react-native'; // Text already imported, ActivityIndicator is new
 import { getGyms } from '../services/firebase/gyms.service';
 import { useAsync } from '../lib/useAsync';
-// REMOVE: import { GYMS, CATEGORIES } from '../data/gyms';
-import { CATEGORIES } from '../data/gyms'; // CATEGORIES stays as a local constant — it's UI config, not data
+import { CATEGORIES } from '../config/filters'; // CATEGORIES stays as a local constant — it's UI config, not data
+import { useUnreadNotifications } from '../lib/useUnreadNotifications';
 
 export default function HomeScreen() {
   const insets = useSafeInsets();
@@ -40,6 +40,7 @@ export default function HomeScreen() {
     loading: locationLoading,
     permissionDenied,
   } = useUserLocation();
+  const unreadCount = useUnreadNotifications();
 
   const { data: profile } = useAsync(async () => {
     const uid = authInstance.currentUser?.uid;
@@ -99,7 +100,7 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('Notifications')}
         >
           <Bell size={20} color={colors.foreground} />
-          <View style={styles.bellDot} />
+          {unreadCount > 0 && <View style={styles.bellDot} />}
         </Pressable>
       </View>
 

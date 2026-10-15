@@ -3,8 +3,7 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Star } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
-import type { Gym } from '../data/gyms';
-
+import type { Gym } from '../types/firestore.types';
 export default function GymCardRow({
   gym,
   onPress,

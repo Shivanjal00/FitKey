@@ -3,8 +3,7 @@ import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Star, Users } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { font } from '../theme/typography';
-import type { Library } from '../data/libraries';
-
+import type { Library } from '../types/firestore.types';
 type Props = {
   library: Library;
   onPress: () => void;
