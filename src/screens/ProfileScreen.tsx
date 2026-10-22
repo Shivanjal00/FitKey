@@ -83,7 +83,7 @@ export default function ProfileScreen({ navigation }: Props) {
   // Firebase Auth user object already has (covers the brief window before
   // the doc has loaded).
   const displayName =
-    profile?.displayName || currentUser?.displayName || 'FitKey User';
+    profile?.displayName || currentUser?.displayName || 'GymBym User';
   const email = profile?.email ?? currentUser?.email ?? null;
   const avatarUri =
     profile?.photoURL || currentUser?.photoURL || FALLBACK_AVATAR;

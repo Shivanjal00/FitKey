@@ -4,12 +4,14 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  updateProfile,
   type User,
 } from '@react-native-firebase/auth';
 import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
   GeoPoint,
 } from '@react-native-firebase/firestore';
@@ -61,8 +63,6 @@ export async function completeRegistration(data: {
     { merge: true },
   );
 }
-// Add these two functions anywhere in the file:
-
 export function buildRegistrationParams(user: User) {
   return {
     phone: user.phoneNumber ?? null,
@@ -86,4 +86,20 @@ export async function signOutUser() {
 
 export function subscribeToAuthState(callback: (user: User | null) => void) {
   return onAuthStateChanged(authInstance, callback);
+}
+
+// Updates the Firebase Auth profile and mirrors the same values into
+// users/{uid}, which is what ProfileScreen reads first.
+export async function updateUserProfile(
+  user: User,
+  data: { displayName: string; photoURL: string | null },
+) {
+  await updateProfile(user, {
+    displayName: data.displayName,
+    photoURL: data.photoURL,
+  });
+  await updateDoc(doc(db, 'users', user.uid), {
+    displayName: data.displayName,
+    photoURL: data.photoURL,
+  });
 }

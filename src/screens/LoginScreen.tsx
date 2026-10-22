@@ -51,7 +51,7 @@ export default function LoginScreen({ navigation }: Props) {
           resizeMode="contain"
         />
       </View>
-      <Text style={styles.title}>Welcome to FitKey</Text>
+      <Text style={styles.title}>Welcome to GymBym</Text>
       <Text style={styles.subtitle}>Sign in with Google to continue.</Text>
 
       {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}

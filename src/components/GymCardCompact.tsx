@@ -27,11 +27,8 @@ export default function GymCardCompact({
       <Text style={styles.name} numberOfLines={1}>
         {gym.name}
       </Text>
-      <Text style={styles.meta}>
-        {gym.distance} · ₹{gym.price}/day
-      </Text>
+      <Text style={styles.meta}>{gym.distance}</Text>
     </Pressable>
-    //· ₹{gym.price}/day
   );
 }
 

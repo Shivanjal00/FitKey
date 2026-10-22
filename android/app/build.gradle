@@ -37,11 +37,11 @@ android {
         dev {
             dimension "env"
             applicationIdSuffix ".dev"
-            resValue "string", "app_name", "FitKey Dev"
+            resValue "string", "app_name", "GymBym Dev"
         }
         prod {
             dimension "env"
-            resValue "string", "app_name", "FitKey"
+            resValue "string", "app_name", "GymBym"
         }
     }
 
